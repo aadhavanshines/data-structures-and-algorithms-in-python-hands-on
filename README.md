@@ -41,7 +41,7 @@ To run them, start Jupyter (installed by `requirements.txt`) from the repository
 jupyter notebook
 ```
 
-Your browser opens. Go to `code`, then a chapter folder, open its `.ipynb` file, and choose **Run > Run All Cells**. Keep each notebook in its chapter folder: the programs import each other's files, and every folder has its own copy of the timing module, `bench.py`.
+Your browser opens. Go to `code`, then a chapter folder, open its `.ipynb` file, and choose **Run > Run All Cells**. Keep each notebook in its chapter folder: the programs import each other's files, and every folder with benchmarks has its own copy of the timing module, `bench.py`.
 
 Benchmark cells take from a second to about a minute each, and their times will differ from the saved ones and from the book's: they depend on your computer. Compare the ratios and the shape of the growth, not the exact numbers.
 
@@ -97,7 +97,7 @@ Chapter 34, Next Steps, has no code. Charts are saved as PNG files in the folder
 | `name.cmd` | The command used instead of `python name.py` (the tests run with pytest) |
 | `name.runonly` | Marks a benchmark: its `.out` file is the recorded run printed in the book, and yours will differ |
 | `solution_*.py` | Worked solutions to the chapter's exercises, also printed in Appendix A |
-| `bench.py` | The timing module from Chapter 3; each chapter folder has an identical copy, `code/common/bench.py` is the original |
+| `bench.py` | The timing module from Chapter 3; every chapter folder with benchmarks has an identical copy (all but `ch02` and `ch15`), and `code/common/bench.py` is the original |
 | `code/ch33/versions.json` | The book's timings of Chapter 33's suite on Python 3.12 to 3.15 |
 
 ## Check everything yourself

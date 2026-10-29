@@ -40,16 +40,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CODE = ROOT / "code"
+
+
+def venv_python(venv):
+    """The Python inside a virtual environment, on any system."""
+    if os.name == "nt":  # Windows
+        return venv / "Scripts" / "python.exe"
+    return venv / "bin" / "python"
+
+
 # By default, check with the Python running this script. If you have made
 # one virtual environment per version in .venvs/py3.12 ... .venvs/py3.15
 # (as the author did), every one of them is used instead.
 _VENVS = {
-    v: ROOT / ".venvs" / f"py{v}" / "bin" / "python"
+    v: venv_python(ROOT / ".venvs" / f"py{v}")
     for v in ("3.15", "3.14", "3.13", "3.12")
 }
 PYTHONS = {v: str(p) for v, p in _VENVS.items() if p.exists()}
 if not PYTHONS:
-    PYTHONS = {f"{sys.version_info[0]}.{sys.version_info[1]}": sys.executable}
+    PYTHONS = {
+        f"{sys.version_info[0]}.{sys.version_info[1]}": sys.executable
+    }
 MAIN = next(iter(PYTHONS))
 RUNNER = Path(__file__).resolve().parent / "echo_input.py"
 TIMEOUT = 120
@@ -85,7 +96,9 @@ def env_for():
 def version_warnings(python):
     """Packages whose installed version differs from requirements.txt."""
     wanted = {}
-    for line in (ROOT / "requirements.txt").read_text().splitlines():
+    for line in (
+        (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()
+    ):
         if "==" in line and not line.startswith("#"):
             name, version = line.split("==")
             wanted[name.strip()] = version.strip()
@@ -100,7 +113,10 @@ def version_warnings(python):
     import json
 
     p = subprocess.run(
-        [python, "-c", code, *wanted], capture_output=True, text=True
+        [python, "-c", code, *wanted],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
     )
     found = json.loads(p.stdout or "{}")
     return [
@@ -126,16 +142,25 @@ def run(python, listing, quick=False):
         )
         args_file = listing.with_suffix(".args")
         args = (
-            args_file.read_text().split("\n") if args_file.exists() else []
+            args_file.read_text(encoding="utf-8").split("\n")
+            if args_file.exists()
+            else []
         )
         args = [a for a in args if a]
         stdin_file = listing.with_suffix(".in")
-        stdin = stdin_file.read_text() if stdin_file.exists() else ""
+        stdin = (
+            stdin_file.read_text(encoding="utf-8")
+            if stdin_file.exists()
+            else ""
+        )
         # Only programs that read input need the echoing runner; the others
         # run directly, so their tracebacks look exactly as in a terminal.
         cmd_file = listing.with_suffix(".cmd")
         if cmd_file.exists():
-            cmd = [python, *shlex.split(cmd_file.read_text().strip())]
+            cmd = [
+                python,
+                *shlex.split(cmd_file.read_text(encoding="utf-8").strip()),
+            ]
         elif stdin_file.exists():
             cmd = [python, str(RUNNER), listing.name, *args]
         else:
@@ -145,16 +170,24 @@ def run(python, listing, quick=False):
         env = env_for()
         if quick:
             env["BENCH_QUICK"] = "1"
-        p = subprocess.run(
-            cmd,
-            cwd=work,
-            input=stdin,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            env=env,
-            timeout=TIMEOUT,
-        )
+        try:
+            p = subprocess.run(
+                cmd,
+                cwd=work,
+                input=stdin,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+                errors="replace",
+                env=env,
+                timeout=TIMEOUT,
+            )
+        except subprocess.TimeoutExpired as error:
+            # Report this listing as a failure and carry on with the rest
+            partial = error.stdout or ""
+            if isinstance(partial, bytes):
+                partial = partial.decode("utf-8", "replace")
+            return f"{partial}\nstopped after {TIMEOUT} seconds\n", -1
         out = p.stdout
         # Show file names as "typo.py", not the temporary folder's full path
         out = out.replace(str(work) + os.sep, "")
@@ -190,6 +223,13 @@ def comparable(text):
 
 
 def check_doctests(python, txt):
+    try:
+        return _doctests(python, txt)
+    except subprocess.TimeoutExpired:
+        return False, f"stopped after {TIMEOUT} seconds"
+
+
+def _doctests(python, txt):
     p = subprocess.run(
         [
             python,
@@ -203,7 +243,8 @@ def check_doctests(python, txt):
         ],
         cwd=txt.parent,
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",
         env=env_for(),
         timeout=TIMEOUT,
     )
@@ -250,10 +291,10 @@ def main():
         if not expected_file.exists():
             failures.append(f"{listing.relative_to(ROOT)}: no .out file")
             continue
-        expected = expected_file.read_text()
+        expected = expected_file.read_text(encoding="utf-8")
         versions_file = listing.with_suffix(".versions")
         versions = (
-            versions_file.read_text().split()
+            versions_file.read_text(encoding="utf-8").split()
             if versions_file.exists()
             else a.python
         )
