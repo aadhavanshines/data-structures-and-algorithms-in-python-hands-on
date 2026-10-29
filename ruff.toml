@@ -1,6 +1,2 @@
-# Code style: 76 characters fit on a printed line.
+# Code style for the book's listings: 76 characters fit on a printed line.
 line-length = 76
-
-[lint.per-file-ignores]
-# Running notebook cells is the point of this module
-"tools/notebook.py" = ["S102"]
