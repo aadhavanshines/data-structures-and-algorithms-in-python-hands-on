@@ -18,10 +18,18 @@ def test_growth_tells_linear_from_quadratic():
 
     def quadratic(n):
         data = list(range(n))
-        return lambda: [x for x in data for _ in data]
+
+        def pairs():  # counts every pair; allocates nothing as n grows
+            count = 0
+            for _ in data:
+                for _ in data:
+                    count += 1
+            return count
+
+        return pairs
 
     _, k1 = growth(linear, [100_000, 200_000, 400_000, 800_000])
-    _, k2 = growth(quadratic, [100, 200, 400, 800], repeat=3)
+    _, k2 = growth(quadratic, [200, 400, 800, 1600], repeat=3)
     assert 0.6 < k1 < 1.4
     assert 1.6 < k2 < 2.4
 
