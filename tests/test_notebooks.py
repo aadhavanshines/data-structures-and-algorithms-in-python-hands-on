@@ -25,7 +25,7 @@ def test_notebook_runs(name):
 def test_notebook_matches_its_source(name):
     """The saved code cells are the ones in build_notebooks.py, so a
     change there can't be forgotten in the notebook."""
-    saved = json.loads((FOLDER / name).read_text())["cells"]
+    saved = json.loads((FOLDER / name).read_text(encoding="utf-8"))["cells"]
     assert ["".join(c["source"]) for c in saved] == [
         text.strip("\n") for _, text in NOTEBOOKS[name]
     ]

@@ -101,13 +101,14 @@ def build(path: Path, cells: list[tuple[str, str]]) -> None:
         "nbformat_minor": 5,
     }
     path.write_text(
-        json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
+        json.dumps(notebook, indent=1, ensure_ascii=False) + "\n",
+        encoding="utf-8",
     )
 
 
 def run(path: Path) -> None:
     """Execute every code cell of a saved notebook, in order."""
-    notebook = json.loads(path.read_text())
+    notebook = json.loads(path.read_text(encoding="utf-8"))
     namespace: dict = {"__name__": "__main__"}
     here = os.getcwd()
     os.chdir(path.parent)
